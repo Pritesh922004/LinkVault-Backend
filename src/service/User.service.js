@@ -5,34 +5,38 @@ import TokenModel from '../models/token.js';
 
 export const hash = async (password)=>{
     try {
-        return await bcrypt.hash(password,10);
+        return await bcrypt.hash(password, 10);
     } catch (error) {
-        console.log(error);
+        console.error("Hashing Error:", error);
+        return null;
     }
 }
 
-export const ComparePassword = async (password,UserPassword)=>{
+export const ComparePassword = async (password, UserPassword)=>{
     try {
-        return  bcrypt.compare(password,UserPassword)
+        return await bcrypt.compare(password, UserPassword);
     } catch (error) {
-        console.log(error);
+        console.error("ComparePassword Error:", error);
+        return null;
     }
 }
 
 export const CreateToken = async (id)=>{
     try {
-        return await jwt.sign({id},process.env.JWT_SECRET,{expiresIn:'1d'});
+        return await jwt.sign({id}, process.env.JWT_SECRET, { expiresIn: '1d' });
     } catch (error) {
-        console.log(error);
+        console.error("CreateToken Error:", error);
+        return null;
     }
 }
 
 export const VerifyToken = async (token)=>{
     try {
-        if(!token) return null;
-        return await jwt.verify(token,process.env.JWT_SECRET)
+        if (!token) return null;
+        return await jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-        console.log(error);
+        console.error("VerifyToken Error:", error);
+        return null;
     }
 }
 
