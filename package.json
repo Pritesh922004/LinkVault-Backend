@@ -26,6 +26,7 @@
     "multer": "^2.4.0",
     "nanoid": "^5.1.5",
     "@napi-rs/canvas": "^0.1.53",
+    "@napi-rs/canvas-linux-x64-gnu": "^0.1.53",
     "nodemailer": "^9.0.5",
     "pdf-parse": "^2.4.5",
     "process": "^0.11.10"
