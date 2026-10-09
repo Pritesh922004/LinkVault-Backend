@@ -2,9 +2,9 @@ import jwt from "jsonwebtoken";
 
 export const AdminAuth = async (req, res, next) => {
     try {
+        // ONLY accept the AdminAccess cookie or a Bearer token — NOT the regular user Access cookie
         const token =
             req.cookies?.AdminAccess ||
-            req.cookies?.Access ||
             req.headers?.authorization?.replace(/^Bearer\s+/i, "");
 
         if (!token) {

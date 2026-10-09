@@ -18,8 +18,8 @@ const extractTextFromPdf = async (buffer) => {
 // Initialize Gemini Client
 const getAiClient = () => {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is missing in Backend/.env file. Please configure your GEMINI_API_KEY.");
+    if (!apiKey || apiKey.startsWith('CHANGE_ME')) {
+        throw new Error("GEMINI_API_KEY is not configured or still has placeholder value in .env file.");
     }
     return new GoogleGenAI({ apiKey });
 };
@@ -27,9 +27,9 @@ const getAiClient = () => {
 // Resilient model fallback execution
 const generateContentWithFallback = async (ai, prompt) => {
     const modelsToTry = [
-        'gemini-3.5-flash-lite',
         'gemini-3.5-flash',
-        'gemini-3.6-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.8-flash',
         'gemini-flash-latest'
     ];
 
@@ -65,6 +65,22 @@ export const reviewCode = async (req, res) => {
             });
         }
 
+        if (code.length > 50000) {
+            return res.status(400).json({
+                success: false,
+                message: "Source code exceeds the maximum allowed length of 50,000 characters."
+            });
+        }
+
+        // Sanitize language and instruction to prevent prompt injection
+        const cleanLanguage = (typeof language === 'string'
+            ? language.replace(/[^a-zA-Z0-9#+.-]/g, '').slice(0, 30)
+            : 'javascript') || 'javascript';
+
+        const cleanInstruction = (typeof instruction === 'string'
+            ? instruction.slice(0, 500).replace(/[`\\]/g, '')
+            : '').trim();
+
         let ai;
         try {
             ai = getAiClient();
@@ -76,7 +92,7 @@ export const reviewCode = async (req, res) => {
         }
 
         const systemPrompt = `You are an expert senior code reviewer and software architect.
-Analyze the following ${language} code carefully.
+Analyze the following ${cleanLanguage} code carefully.
 Provide feedback structured clearly in clean Markdown format with the following sections:
 
 1. **Overall Quality Score**: Provide a rating out of 100 (e.g. 85/100) with a quick 1-line verdict.
@@ -85,23 +101,25 @@ Provide feedback structured clearly in clean Markdown format with the following 
 4. **Performance & Optimization**: Suggest improvements for speed, memory, or clean code practices.
 5. **Refactored Code**: Provide a complete, clean, optimized version of the code block.
 
-${instruction ? `User's specific focus instruction: "${instruction}"` : ''}`;
+${cleanInstruction ? `User's specific focus instruction: "${cleanInstruction}"` : ''}`;
 
-        const userPrompt = `Language: ${language}\n\nCode to review:\n\`\`\`${language}\n${code}\n\`\`\``;
+        const userPrompt = `Language: ${cleanLanguage}\n\nCode to review:\n\`\`\`${cleanLanguage}\n${code}\n\`\`\``;
 
         const reviewResult = await generateContentWithFallback(ai, `${systemPrompt}\n\n${userPrompt}`);
 
         return res.status(200).json({
             success: true,
-            language,
+            language: cleanLanguage,
             review: reviewResult
         });
 
     } catch (error) {
-        console.error("AI Code Review Error:", error);
+        console.error("AI Code Review Error:", error.message);
         return res.status(500).json({
             success: false,
-            message: error.message || "Failed to generate AI code review."
+            message: process.env.NODE_ENV === 'production'
+                ? "Failed to generate AI code review. Please try again later."
+                : (error.message || "Failed to generate AI code review.")
         });
     }
 };
@@ -116,7 +134,7 @@ export const translateDoc = async (req, res) => {
         let originalFilename = null;
 
         if (req.file) {
-            originalFilename = req.file.originalname;
+            originalFilename = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
             const mimeType = req.file.mimetype;
 
             if (mimeType === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
@@ -135,10 +153,14 @@ export const translateDoc = async (req, res) => {
             });
         }
 
-        // Truncate to reasonable chunk size if super large (e.g., max 30,000 chars)
+        // Limit translation length to prevent abuse / resource exhaustion
         if (contentToTranslate.length > 30000) {
             contentToTranslate = contentToTranslate.substring(0, 30000) + "\n\n[Content truncated for length limit]";
         }
+
+        const cleanTargetLang = (typeof targetLanguage === 'string'
+            ? targetLanguage.replace(/[^a-zA-Z0-9 -]/g, '').slice(0, 50)
+            : 'English') || 'English';
 
         let ai;
         try {
@@ -151,7 +173,7 @@ export const translateDoc = async (req, res) => {
         }
 
         const prompt = `You are a professional translator and linguist.
-Translate the following text accurately into ${targetLanguage}.
+Translate the following text accurately into ${cleanTargetLang}.
 Maintain original formatting, structure, paragraphs, headings, bullet points, and tone.
 Do not add conversational fluff or commentary outside the translated text unless necessary for context.
 
@@ -164,17 +186,19 @@ ${contentToTranslate}
 
         return res.status(200).json({
             success: true,
-            targetLanguage,
+            targetLanguage: cleanTargetLang,
             filename: originalFilename,
             originalText: contentToTranslate,
             translatedText
         });
 
     } catch (error) {
-        console.error("AI Document Translation Error:", error);
+        console.error("AI Document Translation Error:", error.message);
         return res.status(500).json({
             success: false,
-            message: error.message || "Failed to translate document."
+            message: process.env.NODE_ENV === 'production'
+                ? "Failed to translate document. Please try again later."
+                : (error.message || "Failed to translate document.")
         });
     }
 };

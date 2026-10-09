@@ -18,24 +18,27 @@ export const SendOtpController = async (req, res) => {
 
     try {
         const user = await FindUser(email);
+
+        // Always return the same response to prevent user enumeration
+        const successResponse = {
+            message: "If an account with that email exists, a verification code has been sent.",
+            email: email.toLowerCase().trim()
+        };
+
         if (!user) {
-            return res.status(404).json({
-                error: "No account found with this email address"
-            });
+            // Don't reveal that the user doesn't exist — return same message
+            return res.status(200).json(successResponse);
         }
 
         const otp = GenerateOtp();
         await SaveOtpRecord(email, otp);
         await SendOtpEmail(email, otp);
 
-        return res.status(200).json({
-            message: "A 6-digit verification code has been sent to your email.",
-            email: email.toLowerCase().trim()
-        });
+        return res.status(200).json(successResponse);
     } catch (error) {
         console.error("SendOtpController Error:", error);
         return res.status(500).json({
-            error: error.message || "Failed to send verification code. Please try again."
+            error: "Failed to send verification code. Please try again."
         });
     }
 };

@@ -1,8 +1,9 @@
 import nodemailer from "nodemailer";
+import { randomInt } from "crypto";
 
-// Generate a 6-digit random OTP code
+// Generate a 6-digit random OTP code using cryptographically secure randomness
 export const GenerateOtp = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(100000, 999999).toString();
 };
 
 // Create a simple Nodemailer transporter using Gmail service
@@ -18,7 +19,7 @@ const createTransporter = () => {
         socketTimeout: 15000,
         family: 4, // Force IPv4 connection to prevent ENETUNREACH
         tls: {
-            rejectUnauthorized: false
+            rejectUnauthorized: true
         }
     });
 };
@@ -64,7 +65,7 @@ export const SendOtpEmail = async (email, otp) => {
     console.log(`⏱️ Validity         : 10 Minutes`);
     console.log("=======================================================\n");
 
-    return { success: true, method: "console", otp };
+    return { success: true, method: "console" };
 };
 
 // Send Signup Verification OTP Email
@@ -108,5 +109,5 @@ export const SendSignupOtpEmail = async (email, otp) => {
     console.log(`⏱️ Validity         : 10 Minutes`);
     console.log("=======================================================\n");
 
-    return { success: true, method: "console", otp };
+    return { success: true, method: "console" };
 };

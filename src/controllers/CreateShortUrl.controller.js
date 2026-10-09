@@ -69,13 +69,23 @@ export const RedirectToUrl = async (req, res) => {
                 success: false,
                 statusCode: 404,
                 error: "Short URL Not Found",
-                message: `The short URL '${id}' does not exist or has expired.`
+                message: "The requested short URL does not exist or has expired."
             });
         }
 
         let redirectUrl = data.Url;
         if (!/^https?:\/\//i.test(redirectUrl)) {
             redirectUrl = "https://" + redirectUrl;
+        }
+
+        // Validate redirect URL to prevent open redirect attacks
+        try {
+            const parsed = new URL(redirectUrl);
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                return res.status(400).json({ error: "Invalid redirect URL protocol" });
+            }
+        } catch {
+            return res.status(400).json({ error: "Invalid redirect URL" });
         }
 
         return res.redirect(redirectUrl);

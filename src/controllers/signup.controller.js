@@ -27,7 +27,7 @@ export const SendSignupOtpController = async (req, res) => {
         });
     } catch (error) {
         console.error("SendSignupOtpController Error:", error);
-        return res.status(500).json({ error: error.message || "Failed to send verification code. Please try again." });
+        return res.status(500).json({ error: "Failed to send verification code. Please try again." });
     }
 };
 

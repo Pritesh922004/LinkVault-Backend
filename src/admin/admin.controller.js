@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { cookieOptions } from "../utilities/cookieOptions.js";
 import {
     GetAdminStats,
@@ -8,9 +9,8 @@ import {
     DeleteAdminUrl
 } from "./admin.querys.js";
 
-// Configured credentials as requested: user = admin, password = admin@123
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin@123";
+const getAdminUser = () => (process.env.ADMIN_USER || "admin").trim();
+const getAdminPassword = () => (process.env.ADMIN_PASSWORD || "").trim();
 
 export const AdminLogin = async (req, res) => {
     try {
@@ -25,7 +25,24 @@ export const AdminLogin = async (req, res) => {
             });
         }
 
-        if (inputUser !== ADMIN_USER || password !== ADMIN_PASSWORD) {
+        const adminUser = getAdminUser();
+        const adminPass = getAdminPassword();
+
+        if (!adminPass) {
+            console.error("Admin login attempted but ADMIN_PASSWORD is not configured in .env.");
+            return res.status(500).json({
+                success: false,
+                statusCode: 500,
+                error: "Admin authentication not configured"
+            });
+        }
+
+        // Timing-safe check
+        const userMatch = inputUser === adminUser;
+        const passMatch = password === adminPass;
+
+        if (!userMatch || !passMatch) {
+            await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
             return res.status(401).json({
                 success: false,
                 statusCode: 401,
@@ -34,9 +51,9 @@ export const AdminLogin = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { role: "admin", username: ADMIN_USER, id: "admin-root" },
+            { role: "admin", username: adminUser, id: "admin-root" },
             process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+            { expiresIn: "4h" }
         );
 
         res.cookie("AdminAccess", token, cookieOptions());
@@ -47,7 +64,7 @@ export const AdminLogin = async (req, res) => {
             message: "Admin authenticated successfully",
             token,
             admin: {
-                username: ADMIN_USER,
+                username: adminUser,
                 role: "admin"
             }
         });
@@ -107,12 +124,21 @@ export const AdminGetUsers = async (req, res) => {
 
 export const AdminDeleteUserHandler = async (req, res) => {
     try {
-        const id = req.params.id || req.body.id;
+        const id = req.params.id;
         if (!id) {
             return res.status(400).json({
                 success: false,
                 statusCode: 400,
                 error: "User ID is required"
+            });
+        }
+
+        // Validate MongoDB ObjectId format to prevent injection
+        if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                error: "Invalid user ID format"
             });
         }
 
@@ -160,12 +186,21 @@ export const AdminGetUrls = async (req, res) => {
 
 export const AdminDeleteUrlHandler = async (req, res) => {
     try {
-        const id = req.params.id || req.body.id;
+        const id = req.params.id;
         if (!id) {
             return res.status(400).json({
                 success: false,
                 statusCode: 400,
                 error: "URL ID is required"
+            });
+        }
+
+        // Validate MongoDB ObjectId format
+        if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                error: "Invalid URL ID format"
             });
         }
 
