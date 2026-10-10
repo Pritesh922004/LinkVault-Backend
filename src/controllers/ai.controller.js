@@ -1,14 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
-import { PDFParse } from 'pdf-parse';
+import { extractText } from 'unpdf';
 
-// Helper for extracting text from PDF buffer
+// Helper for extracting text from PDF buffer using node-native serverless-friendly unpdf
 const extractTextFromPdf = async (buffer) => {
     try {
         const uint8Data = new Uint8Array(buffer);
-        const parser = new PDFParse(uint8Data);
-        await parser.load();
-        const textResult = await parser.getText();
-        return typeof textResult === 'string' ? textResult : (textResult?.text || '');
+        const { text } = await extractText(uint8Data, { mergePages: true });
+        return text || '';
     } catch (err) {
         console.warn("PDF parse warning/fallback:", err.message);
         return buffer.toString('utf-8');
