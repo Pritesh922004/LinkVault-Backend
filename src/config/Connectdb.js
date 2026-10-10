@@ -13,9 +13,9 @@ const ConnectDB = async () => {
         return cachedPromise;
     }
 
-    const mongoUrl = process.env.MongoUrl;
+    const mongoUrl = process.env.MongoUrl || process.env.MONGO_URL || process.env.MONGODB_URI || process.env.MONGO_URI;
     if (!mongoUrl) {
-        const err = new Error("MongoUrl environment variable is not defined. Please configure it in your Vercel Project Settings > Environment Variables.");
+        const err = new Error("MongoDB connection string is missing. Please set MongoUrl (or MONGODB_URI) in your Vercel Project Settings > Environment Variables.");
         console.error("Database Configuration Error:", err.message);
         throw err;
     }
@@ -23,7 +23,7 @@ const ConnectDB = async () => {
     cachedPromise = mongoose.connect(mongoUrl, {
         autoIndex: process.env.NODE_ENV !== 'production',
         serverSelectionTimeoutMS: 5000,
-        maxPoolSize: 10, // Optimal pool size for serverless functions
+        maxPoolSize: 10,
     }).then((m) => {
         cachedPromise = null;
         if (process.env.NODE_ENV !== 'production') {

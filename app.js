@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import cookieParser from "cookie-parser";
+import morgan from 'morgan';
 import { body, param } from "express-validator";
 
 import User from "./src/Routes/User.routes.js";
@@ -19,6 +20,7 @@ import { DeleteUrls } from "./src/controllers/DeleteUrl.controller.js";
 import { Auth } from "./src/middleware/Auth.middleware.js";
 
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
@@ -29,6 +31,7 @@ app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
+    xPoweredBy: false, // Express handles this natively via app.disable('x-powered-by')
     hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
@@ -121,7 +124,6 @@ app.use((req, res, next) => {
 app.use(hpp());
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-    const morgan = (await import("morgan")).default;
     app.use(morgan('dev'));
 }
 
@@ -215,15 +217,13 @@ app.use((err, req, res, next) => {
 });
 
 // ---------------------------------------------------------------------------
-// Database Connection & Server Start
+// Local Server Start (Disabled in Vercel Serverless Environment)
 // ---------------------------------------------------------------------------
-ConnectDB().catch((err) => {
-    if (process.env.NODE_ENV !== 'production') {
-        console.warn("Initial MongoDB connection notice:", err.message);
-    }
-});
-
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+const isDirectRun = process.argv[1] && (process.argv[1].endsWith('app.js') || process.argv[1].endsWith('app'));
+if (!process.env.VERCEL && isDirectRun) {
+    ConnectDB().catch((err) => {
+        console.warn("Local MongoDB connection notice:", err.message);
+    });
     app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });

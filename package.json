@@ -1,11 +1,10 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "LinkVault Backend API",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js"
   },
   "keywords": [],
@@ -15,29 +14,23 @@
   "dependencies": {
     "@google/genai": "^2.27.0",
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-mongo-sanitize": "^2.2.0",
-    "express-rate-limit": "^8.7.1",
+    "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
-    "helmet": "^8.3.0",
+    "helmet": "^8.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
     "morgan": "^1.11.0",
     "multer": "^2.4.0",
     "nanoid": "^5.1.5",
-<<<<<<< HEAD
-    "nodemailer": "^10.0.16",
-=======
-    "@napi-rs/canvas": "^0.1.53",
-    "@napi-rs/canvas-linux-x64-gnu": "^0.1.53",
-    "nodemailer": "^9.0.5",
->>>>>>> 7c35e78d2c96ea880a1e904b9d67a547f2f72201
-    "pdf-parse": "^2.4.5",
-    "process": "^0.11.10"
+    "nodemailer": "^7.0.12",
+    "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

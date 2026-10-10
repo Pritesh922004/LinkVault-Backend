@@ -1,10 +1,10 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const getJwtSecret = () => {
-    const secret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_SECRET || process.env.JWT_KEY || process.env.SECRET_KEY;
     if (!secret) {
-        throw new Error("JWT_SECRET environment variable is missing.");
+        throw new Error("JWT_SECRET environment variable is missing in environment variables.");
     }
     return secret;
 };
