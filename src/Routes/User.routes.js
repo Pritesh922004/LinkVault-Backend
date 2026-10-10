@@ -58,7 +58,7 @@ route.post('/signin',
 
 // Session Verification & Logout
 route.get('/verify', Auth, VerifyUser);
-route.get('/signout', Auth, SignOutUser);
+route.all('/signout', SignOutUser);
 
 // Forgot Password & OTP Endpoints
 route.post('/send-otp',

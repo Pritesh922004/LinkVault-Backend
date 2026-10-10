@@ -1,15 +1,26 @@
 import { BlockedToken } from "../service/token.service.js";
 import { cookieOptions } from "../utilities/cookieOptions.js";
+import { VerifyToken } from "../service/User.service.js";
 
 export const SignOutUser = async (req, res) => {
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim();
+
     try {
-        const token = req.cookies?.Access || req.headers?.authorization?.split(" ")[1];
-        if (!token) return res.status(401).json({ error: "Unauthorized" });
-        await BlockedToken(token, req.user?._id || req.user?.id);
+        const token = req.cookies?.Access || req.headers?.authorization?.replace(/^Bearer\s+/i, '');
+        if (token) {
+            try {
+                const user = req.user || await VerifyToken(token);
+                if (user?.id || user?._id) {
+                    await BlockedToken(token, user.id || user._id);
+                }
+            } catch {
+                // Ignore token decode failures during logout cleanup
+            }
+        }
         res.clearCookie("Access", cookieOptions());
-        return res.status(200).json({ message: "Logout Successfully" });
+        return res.redirect(frontendUrl);
     } catch (error) {
         console.error("SignOut Error:", error);
-        return res.status(500).json({ error: "Failed to logout securely" });
+        return res.redirect(frontendUrl);
     }
-}
+};
