@@ -2,6 +2,12 @@ import { CreateNanoID } from "../service/CreateNoneID.service.js";
 import { StoreShortUrl, FindUrl, CheckShortUrl } from "../Dao/ShortUrlQuerys.js";
 import { validationResult } from "express-validator";
 
+const RESERVED_SLUGS = new Set([
+    'features', 'dashboard', 'analytics', 'pricing', 'faq', 'ai-hub',
+    'auth', 'forgot-password', 'reset-password', 'admin', 'api', 'user',
+    'shorturl', 'delete', 'r', 's', 'favicon.ico', 'robots.txt'
+]);
+
 export const CreateShortUrl = async (req, res) => {
     const Result = validationResult(req);
 
@@ -22,6 +28,9 @@ export const CreateShortUrl = async (req, res) => {
     let ShortUrl;
     if (slug && typeof slug === "string" && slug.trim().length > 0) {
         ShortUrl = slug.trim();
+        if (RESERVED_SLUGS.has(ShortUrl.toLowerCase())) {
+            return res.status(400).json({ error: `The custom slug "${ShortUrl}" is reserved for system routes. Please choose another.` });
+        }
     } else {
         ShortUrl = CreateNanoID(6);
     }
@@ -39,11 +48,10 @@ export const CreateShortUrl = async (req, res) => {
             return res.status(500).json({ error: "Failed to store URL in database" });
         }
 
-        const domain = (process.env.Domain || "http://localhost:3000/").trim();
-        const baseDomain = domain.endsWith("/") ? domain : `${domain}/`;
+        const domain = (process.env.FRONTEND_URL || process.env.Domain || "http://localhost:5173").trim().replace(/\/+$/, '');
 
         return res.status(200).json({
-            ShortUrl: baseDomain + data.Short_Url,
+            ShortUrl: `${domain}/r/${data.Short_Url}`,
             data: data
         });
     } catch (error) {
@@ -60,6 +68,12 @@ export const RedirectToUrl = async (req, res) => {
     }
 
     const { id } = req.params;
+
+    // Safety fallback: if a reserved system route is hit, redirect to frontend page
+    if (RESERVED_SLUGS.has(id.toLowerCase())) {
+        const frontendUrl = (process.env.FRONTEND_URL || "https://linkvault-f.vercel.app").trim().replace(/\/+$/, '');
+        return res.redirect(`${frontendUrl}/${id}`);
+    }
 
     try {
         const data = await FindUrl(id);

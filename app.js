@@ -174,7 +174,16 @@ app.use('/user', User);
 app.use('/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Public redirect route
+// Public redirect routes (supports both /r/:id and /:id)
+app.get('/r/:id',
+    param('id')
+        .notEmpty().withMessage("ShortUrlID is Missing In ShortUrl")
+        .isString().withMessage("Invalid ShortUrl")
+        .trim()
+        .isAlphanumeric().withMessage("Invalid ShortUrl format")
+        .isLength({ max: 30 }).withMessage("Invalid ShortUrl")
+    , RedirectToUrl);
+
 app.get('/:id',
     param('id')
         .notEmpty().withMessage("ShortUrlID is Missing In ShortUrl")
