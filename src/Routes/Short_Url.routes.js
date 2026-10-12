@@ -1,5 +1,5 @@
 import express from 'express';
-import { CreateShortUrl } from '../controllers/CreateShortUrl.controller.js';
+import { CreateShortUrl, GetThreatAudit, InspectUrlController } from '../controllers/CreateShortUrl.controller.js';
 import { body } from 'express-validator';
 import { Auth } from '../middleware/Auth.middleware.js';
 import { GetAllUrls } from '../controllers/GetAllUrls.controller.js';
@@ -57,5 +57,7 @@ route.post('/Create',
     , CreateShortUrl);
 
 route.get('/all', Auth, GetAllUrls);
+route.get('/audit/:id', GetThreatAudit);
+route.post('/inspect', InspectUrlController);
 
 export default route;

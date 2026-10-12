@@ -18,6 +18,35 @@ const ShortUrlSchema = new mongoose.Schema({
     User: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+    },
+    // Cybersecurity Threat Detection Fields
+    threatScore: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
+    threatCategory: {
+        type: String,
+        default: 'Safe',
+        enum: ['Safe', 'Suspicious', 'Phishing', 'Malware', 'Unknown']
+    },
+    threatDetails: {
+        type: [String],
+        default: []
+    },
+    verdict: {
+        type: String,
+        default: 'SAFE',
+        enum: ['SAFE', 'SUSPICIOUS', 'DANGEROUS']
+    },
+    isQuarantined: {
+        type: Boolean,
+        default: false
+    },
+    scannedAt: {
+        type: Date,
+        default: Date.now
     }
 },{timestamps:true});
 
